@@ -1,7 +1,7 @@
 
-/* ==============================
-   1. AUTO TEXT SCRAMBLE EFFECT
-============================== */
+// ==============================
+// TEXT SCRAMBLE EFFECT
+// ==============================
 
 const scrambleTexts = document.querySelectorAll(".scramble");
 
@@ -49,7 +49,6 @@ scrambleTexts.forEach((element, elementIndex) => {
 
                 element.textContent = originalText;
 
-                // 완성 후 잠시 대기하고 다시 실행
                 timeout = setTimeout(startScramble, 1200);
 
             }
@@ -58,92 +57,70 @@ scrambleTexts.forEach((element, elementIndex) => {
 
     }
 
-    // 문구마다 시작 시간을 다르게 설정
     setTimeout(startScramble, elementIndex * 500);
 
 });
 
 
-/* ==============================
-   2. NAVIGATION
-============================== */
+// ==============================
+// NAVIGATION
+// ==============================
 
-const navLinks = document.querySelectorAll(
+const navigationLinks = document.querySelectorAll(
     ".header-nav a, .header-logo"
 );
 
-let navigationTimer = null;
-
-function navigateTo(id, updateURL = true) {
+function navigateTo(id) {
 
     const target = document.getElementById(id);
 
-    if (!target) {
-        console.error("Section not found:", id);
-        return;
-    }
+    if (!target) return;
 
-    if (navigationTimer) {
-        clearTimeout(navigationTimer);
-    }
-
-    // 실제 섹션 위치 계산
-    const rect = target.getBoundingClientRect();
-
-    const destination = window.scrollY + rect.top;
-
-    // URL 변경
-    if (updateURL) {
-
-        history.pushState(
-            { section: id },
-            "",
-            "#" + id
-        );
-
-    }
-
-    // 부드러운 스크롤
-    window.scrollTo({
-        top: destination,
-        behavior: "smooth"
+    target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
     });
+
+    history.pushState(null, "", `#${id}`);
 
 }
 
+navigationLinks.forEach(link => {
 
-// 네비게이션 클릭
-navLinks.forEach((link) => {
-
-    link.addEventListener("click", (event) => {
+    link.addEventListener("click", event => {
 
         event.preventDefault();
 
-        const id =
-            link.getAttribute("data-target") ||
-            link.getAttribute("href").replace("#", "");
+        const targetId =
+            link.dataset.target ||
+            link.getAttribute("href")?.replace("#", "");
 
-        navigateTo(id);
+        if (!targetId) return;
+
+        navigateTo(targetId);
 
     });
 
 });
 
 
-// 뒤로 가기 / 앞으로 가기
+// ==============================
+// BROWSER HISTORY
+// ==============================
+
 window.addEventListener("popstate", () => {
 
-    const id = window.location.hash.replace("#", "");
+    const id = location.hash.replace("#", "");
 
-    if (id) {
+    if (!id) return;
 
-        navigateTo(id, false);
+    const target = document.getElementById(id);
 
-    } else {
+    if (target) {
 
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
         });
 
     }
@@ -151,81 +128,74 @@ window.addEventListener("popstate", () => {
 });
 
 
-// 처음 페이지 접속 시 해시 확인
+// ==============================
+// INITIAL HASH POSITION
+// ==============================
+
 window.addEventListener("load", () => {
 
-    const id = window.location.hash.replace("#", "");
+    const id = location.hash.replace("#", "");
 
-    if (id) {
+    if (!id) return;
 
-        const target = document.getElementById(id);
+    const target = document.getElementById(id);
 
-        if (target) {
+    if (target) {
 
-            const destination =
-                window.scrollY +
-                target.getBoundingClientRect().top;
-
-            window.scrollTo({
-                top: destination,
-                behavior: "instant"
-            });
-
-        }
+        target.scrollIntoView({
+            behavior: "instant",
+            block: "start"
+        });
 
     }
 
 });
 
 
-/* ==============================
-   3. HOME 3D MOUSE EFFECT
-============================== */
+// ==============================
+// HOME 3D MOUSE EFFECT
+// ==============================
 
-const homeSection = document.querySelector(".home");
+const home = document.querySelector(".home");
 
-const homeObject = document.querySelector(".home-object-inner");
+const homeObject = document.querySelector(
+    ".home-object-inner"
+);
 
-const reducedMotion = window.matchMedia(
+const prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
-).matches;
+);
 
 const hasFinePointer = window.matchMedia(
-    "(hover: hover) and (pointer: fine)"
-).matches;
-
+    "(pointer: fine)"
+);
 
 if (
-    homeSection &&
+    home &&
     homeObject &&
-    hasFinePointer &&
-    !reducedMotion
+    !prefersReducedMotion.matches &&
+    hasFinePointer.matches
 ) {
 
-    homeSection.addEventListener("mousemove", (event) => {
+    home.addEventListener("mousemove", event => {
 
-        const rect = homeSection.getBoundingClientRect();
+        const rect = home.getBoundingClientRect();
 
-        const mouseX =
-            (event.clientX - rect.left) / rect.width;
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
 
-        const mouseY =
-            (event.clientY - rect.top) / rect.height;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
 
-        const rotateX = (0.5 - mouseY) * 15;
+        const rotateX = (centerY - y) / 35;
+        const rotateY = (x - centerX) / 35;
 
-        const rotateZ = (mouseX - 0.5) * 8;
-
-        homeObject.style.transform = `
-            translateY(-10px)
-            rotateX(${rotateX}deg)
-            rotateZ(${rotateZ}deg)
-        `;
+        homeObject.style.transform =
+            `translateY(0) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
     });
 
-
-    homeSection.addEventListener("mouseleave", () => {
+    home.addEventListener("mouseleave", () => {
 
         homeObject.style.transform = "";
 
