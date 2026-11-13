@@ -202,3 +202,118 @@ if (
     });
 
 }
+
+
+// ==============================
+// 3D OVERLAPPING PAGE TRANSITION
+// ==============================
+
+const transitionPanels = document.querySelectorAll(
+    "main > .panel"
+);
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function updatePageTransition() {
+
+    if (prefersReducedMotion.matches) {
+
+        transitionPanels.forEach(panel => {
+
+            panel.style.setProperty("--panel-enter", 1);
+            panel.style.setProperty("--panel-exit", 0);
+
+        });
+
+        return;
+    }
+
+    const viewportHeight = window.innerHeight;
+
+    transitionPanels.forEach((panel, index) => {
+
+        const rect = panel.getBoundingClientRect();
+
+        // 현재 페이지가 화면 안으로 들어오는 정도
+        const enterProgress = clamp(
+            1 - rect.top / viewportHeight,
+            0,
+            1
+        );
+
+        // 다음 페이지가 들어오는 정도
+        let exitProgress = 0;
+
+        const nextPanel = transitionPanels[index + 1];
+
+        if (nextPanel) {
+
+            const nextRect = nextPanel.getBoundingClientRect();
+
+            exitProgress = clamp(
+                1 - nextRect.top / viewportHeight,
+                0,
+                1
+            );
+
+        }
+
+        panel.style.setProperty(
+            "--panel-enter",
+            enterProgress.toFixed(3)
+        );
+
+        panel.style.setProperty(
+            "--panel-exit",
+            exitProgress.toFixed(3)
+        );
+
+    });
+
+}
+
+
+// ==============================
+// SCROLL PERFORMANCE
+// ==============================
+
+let transitionFrame = null;
+
+function requestPageTransitionUpdate() {
+
+    if (transitionFrame !== null) return;
+
+    transitionFrame = requestAnimationFrame(() => {
+
+        updatePageTransition();
+
+        transitionFrame = null;
+
+    });
+
+}
+
+window.addEventListener(
+    "scroll",
+    requestPageTransitionUpdate,
+    { passive: true }
+);
+
+window.addEventListener(
+    "resize",
+    requestPageTransitionUpdate
+);
+
+window.addEventListener(
+    "load",
+    updatePageTransition
+);
+
+prefersReducedMotion.addEventListener(
+    "change",
+    updatePageTransition
+);
+
+updatePageTransition();
